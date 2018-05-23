@@ -1,6 +1,7 @@
 module JoinList where
 
 import Sized
+import Scrabble
 import Data.Monoid
 import Debug.Trace
 
@@ -39,20 +40,28 @@ indexJ i (Append n l1 l2)
     | otherwise = indexJ (i - m) l2
     where m = sizeOf $ tag l1
 
+
 dropJ :: (Sized b, Monoid b) => Int -> JoinList b a -> JoinList b a
 dropJ _ Empty = Empty
 dropJ i li | i <= 0 = li
 dropJ i li | i >= (sizeOf . tag) li = Empty
-dropJ i (Append j l1 l2) = Append m left right 
+dropJ i (Append j l1 l2) = left +++ right 
       where left = dropJ i l1
             right = dropJ (i - (sizeOf . tag) l1) l2
-            m = j - (b i)
 
 takeJ :: (Sized b, Monoid b) => Int -> JoinList b a -> JoinList b a
 takeJ _ Empty = Empty
 takeJ i _ | i <= 0 = Empty
+takeJ i li | i >= (sizeOf . tag) li = li
+takeJ i (Append j l1 l2) = left +++ right 
+      where left = takeJ i l1
+            right = takeJ (i - (sizeOf . tag) l1) l2
 
 
+-- exercise 3 
+scoreLine :: String -> JoinList Score String
+scoreLine [] = Empty 
+scoreLine str = Single (scoreString str) str
 
 (!!?) :: [a] -> Int -> Maybe a
 [] !!? _         = Nothing
