@@ -1,9 +1,11 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleInstances #-}
 module JoinList where
 
 import Sized
 import Scrabble
 import Data.Monoid
 import Debug.Trace
+import Buffer
 
 data JoinList m a = Empty 
                   | Single m a
@@ -12,6 +14,8 @@ data JoinList m a = Empty
 
 -- exercise 1
 (+++) :: Monoid m => JoinList m a -> JoinList m a -> JoinList m a
+(+++) jlA Empty = jlA
+(+++) Empty jlA = jlA
 (+++) jlA jlB = Append m jlA jlB where m = tag jlA <> tag jlB
 
 tag :: Monoid m => JoinList m a -> m
@@ -62,6 +66,38 @@ takeJ i (Append j l1 l2) = left +++ right
 scoreLine :: String -> JoinList Score String
 scoreLine [] = Empty 
 scoreLine str = Single (scoreString str) str
+
+-- exercise 4
+jlToString :: JoinList m String -> String
+jlToString Empty            = ""
+jlToString (Single _ a)     = a 
+jlToString (Append _ l1 l2) = jlToString l1 ++ jlToString l2
+
+bufferFromString :: String -> JoinList (Score, Size) String 
+bufferFromString str = foldr (+++) Empty $ map jlFromString $ lines str
+
+jlFromString :: String -> JoinList (Score, Size) String
+jlFromString x = Single (scoreString x, Size 1) x
+
+replaceJ :: Int -> String -> JoinList (Score, Size) String -> JoinList (Score, Size) String
+replaceJ i _ jl | i < 0 || i > sizeOf (tag jl) = jl 
+replaceJ 0 str (Single _ _) = jlFromString str
+replaceJ i str (Append n l1 l2) 
+          | i < m = trace (show m) replaceJ i str l1 +++ l2
+          | otherwise = l1 +++ replaceJ (i-m) str l2
+          where m = sizeOf (tag l1)
+
+          
+instance Buffer (JoinList (Score, Size) String) where
+  toString = jlToString
+  fromString = bufferFromString
+  line = indexJ
+  replaceLine = replaceJ
+  numLines = sizeOf . tag
+  value Empty = 0
+  value (Single (s, _) _) = getScore s
+  value (Append (s, _) _ _) = getScore s
+
 
 (!!?) :: [a] -> Int -> Maybe a
 [] !!? _         = Nothing

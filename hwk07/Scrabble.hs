@@ -6,8 +6,20 @@ import Data.Monoid
 newtype Score = Score Int 
   deriving (Eq, Ord, Show, Num)
 
-score :: Char -> Score
-score rawC
+getScore :: Score -> Int 
+getScore (Score i) = i
+
+class Scored a where 
+  score :: a -> Score
+
+instance Scored Score where 
+  score = id
+ 
+instance Scored a => Scored (a,b) where 
+  score = score . fst
+
+letterScore :: Char -> Score
+letterScore rawC
   | c `elem` "eaionrtlsu" = Score 1
   | c `elem` "dg" = Score 2
   | c `elem` "bcmp" = Score 3
@@ -20,7 +32,7 @@ score rawC
 
 scoreString :: String -> Score 
 scoreString [] = Score 0
-scoreString (a:as) = score a + scoreString as
+scoreString (a:as) = letterScore a + scoreString as
 
 instance Monoid Score where 
   mempty = Score 0
