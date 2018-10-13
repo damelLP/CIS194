@@ -68,8 +68,9 @@ instance Functor Parser where
   fmap f (Parser a) = Parser $ func (first f) a
 
 -- exercise 2
-instance Applicative Parser where 
-  pure
+instance Applicative Parser where
+  pure a = Parser f where f _ = Just (a, "")
+  (Parser a) <*> (Parser b) = Parser (a b)
 
 
 
